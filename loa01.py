@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     
     my_tree = tree()
-    for i in range(7000):
+    for i in range(70000):
         my_tree.startOnlineTrain(data[i], label[i])
 
 
