@@ -26,11 +26,9 @@ def mnist_generator():
     label = dataset.target[shuffle]
     del shuffle, dataset
     
-    #variance normalize
+    #normalize
     data = data/np.reshape(np.std(data, axis=1), (data_size, 1))
     data = data-np.reshape(np.mean(data, axis=1), (data_size, 1))
-    
-    
     '''
     #resize 784 to 28*28
     data2 = np.zeros((data_size, 28, 28))
@@ -41,6 +39,8 @@ def mnist_generator():
     '''
     for i in range(data_size):
         yield (data[i], label[i])
+
+
 
 
 class fc_with_sigmoid(object):
@@ -63,6 +63,8 @@ class fc_with_sigmoid(object):
         #print('b0_before =', self.b0)
         self.b0 = self.b0 -lr*(c_hat - c)/(np.exp(-y_hat)+1)/(np.exp(y_hat)+1)
         #print('b0_after =', self.b0)
+
+
 
 
 class node(object):
@@ -104,18 +106,29 @@ class node(object):
         self.e_all = self.e_all + c
         self.n[class_index_in_node] = self.n[class_index_in_node] + 1
         self.e[class_index_in_node] = self.e[class_index_in_node] + c
-    
-    def judge(self, class_index_in_node):
-        #c == 0: left, c == 1: right
+        
+    def findExceptionAll(self):
         if self.n_all == 0:
-            c = int(0 <= 0)
-        elif self.n[class_index_in_node] == 0:
-            c = int(self.e_all/self.n_all <= 0)
+            return 0
         else:
-            c = int(self.e_all/self.n_all <= self.e[class_index_in_node]/self.n[class_index_in_node])
-        return c
+            return self.e_all/self.n_all
         
-        
+    def findExceptionOneClass(self, class_index_in_node):
+        if self.n[class_index_in_node] == 0:
+            return 0
+        else:
+            return self.e[class_index_in_node]/self.n[class_index_in_node]
+    
+    def judgeInTrain(self, class_index_in_node):
+        #c == 0: left, c == 1: right        
+        return int(self.findExceptionAll() <= self.findExceptionOneClass(class_index_in_node))
+    
+    def judgeInTest(self, x):
+        return int(self.findExceptionAll() <= self.testModel(x))
+    
+    
+    
+    
         
 class tree(object):
     
@@ -151,7 +164,7 @@ class tree(object):
         class_index_in_node = node.class_name.index(y)
         print('class_index_in_node =', class_index_in_node)
         #c == 0: left, c == 1: right
-        c = node.judge(class_index_in_node)
+        c = node.judgeInTrain(class_index_in_node)
         print('c =', c)
         
         #3:train
@@ -176,9 +189,14 @@ class tree(object):
     def startOnlineTrain(self, xy):
         self.onlineTrain(xy, self.root)
 
+    def onlineTest(self, x, node):
+        if len(node.class_name) == 1:
+            return node.class_name[0]
+        else:
+            return self.onlineTest(x, [node.left, node.right][node.judgeInTest(x)])
 
-
-
+    def startOnlineTest(self, x):
+        return self.onlineTest(x, self.root)
 
 
 
@@ -187,14 +205,22 @@ class tree(object):
 
 if __name__ == "__main__":
     
+    #build
     my_tree = tree()
     my_generator = mnist_generator()
-
-    for i in range(30000):
+    
+    #train
+    for i in range(10000):
         print('\nindex of sample i =', i)
         my_tree.startOnlineTrain(next(my_generator))
-        
-
+    
+    #test
+    test_result = []
+    for i in range(1000):
+        x, y = next(my_generator)
+        test_result.append(int(y == my_tree.startOnlineTest(x)))
+    accurancy = np.mean(test_result)
+    print('accurancy =', accurancy)
 
 
 
