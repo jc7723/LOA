@@ -76,10 +76,11 @@ class fc_with_sigmoid(object):
         y_hat = self.w.dot(x) + self.b0
         c_hat = 1/(1+np.exp(-y_hat))
         #print('w_before =', self.w[:5])
-        self.w = self.w - lr*(c_hat - c)/(np.exp(-y_hat)+1)/(np.exp(y_hat)+1)*x
+        temp = lr*(c_hat - c)/(np.exp(-y_hat)+1)/(np.exp(y_hat)+1)
+        self.w = self.w - temp*x
         #print('w_after =', self.w[:5])
         #print('b0_before =', self.b0)
-        self.b0 = self.b0 -lr*(c_hat - c)/(np.exp(-y_hat)+1)/(np.exp(y_hat)+1)
+        self.b0 = self.b0 -temp
         #print('b0_after =', self.b0)
 
 
