@@ -1,2 +1,2 @@
 # LOA
-advanced machine learning project with laoge
+Modified Logarithmic Time Online Multiclass Train and Prediction
